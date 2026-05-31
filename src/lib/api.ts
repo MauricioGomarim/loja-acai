@@ -242,6 +242,10 @@ export interface Order {
   status: OrderStatus;
   paymentMethod: string;
   deliveryAddress?: string;
+  deliveryCep?: string;
+  deliveryNeighborhood?: string;
+  deliveryCity?: string;
+  deliveryComplement?: string;
   items: OrderItem[];
   user?: {
     name: string;
