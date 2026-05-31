@@ -6,6 +6,7 @@ import type { Order, OrderStatus } from "../lib/api";
 import {
   IoArrowBack,
   IoChevronDown,
+  IoRefresh,
 } from "react-icons/io5";
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
@@ -38,6 +39,13 @@ export function AdminOrders() {
       return;
     }
     fetchOrders();
+
+    // Refetch when page becomes visible (e.g., navigating back)
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") fetchOrders();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [user, navigate]);
 
   async function fetchOrders() {
@@ -87,11 +95,16 @@ export function AdminOrders() {
   return (
     <div className="min-h-screen bg-[#f5f5f5]">
       {/* Header */}
-      <div className="bg-[#5b0e5c] p-4 flex items-center gap-3">
-        <button onClick={() => navigate("/admin")} className="text-white p-1">
-          <IoArrowBack className="text-2xl" />
+      <div className="bg-[#5b0e5c] p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate("/admin")} className="text-white p-1">
+            <IoArrowBack className="text-2xl" />
+          </button>
+          <h1 className="text-white font-semibold text-lg">Gerenciar Pedidos</h1>
+        </div>
+        <button onClick={fetchOrders} className="text-white p-2 hover:bg-white/10 rounded-full transition-colors">
+          <IoRefresh className="text-xl" />
         </button>
-        <h1 className="text-white font-semibold text-lg">Gerenciar Pedidos</h1>
       </div>
 
       <div className="max-w-md mx-auto p-4">

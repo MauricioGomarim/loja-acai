@@ -126,12 +126,8 @@ export function Profile() {
             <span className="text-zinc-700">Meus dados</span>
             <IoChevronForward className="text-zinc-400" />
           </button>
-          <button className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 transition-colors border-b border-zinc-100">
-            <span className="text-zinc-700">Endereços</span>
-            <IoChevronForward className="text-zinc-400" />
-          </button>
           <button className="w-full flex items-center justify-between p-4 hover:bg-zinc-50 transition-colors">
-            <span className="text-zinc-700">Formas de pagamento</span>
+            <span className="text-zinc-700">Endereços</span>
             <IoChevronForward className="text-zinc-400" />
           </button>
         </div>
