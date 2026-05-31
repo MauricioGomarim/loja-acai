@@ -190,6 +190,25 @@ class ApiClient {
       method: 'DELETE'
     });
   }
+
+  async createPixPayment(data: { amount: number; description: string; payerEmail?: string; orderId?: string }) {
+    return this.request<{ paymentId: number; status: string; qrCodeBase64: string | null; qrCode: string | null; ticketUrl: string | null }>('/payments/pix', {
+      method: 'POST',
+      body: data
+    });
+  }
+
+  async checkPixPaymentStatus(paymentId: number) {
+    return this.request<{ paymentId: number; status: string; statusDetail: string }>(`/payments/pix/${paymentId}/status`);
+  }
+}
+
+export interface PixPayment {
+  paymentId: number;
+  status: string;
+  qrCodeBase64: string | null;
+  qrCode: string | null;
+  ticketUrl: string | null;
 }
 
 // Types
