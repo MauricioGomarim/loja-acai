@@ -61,7 +61,7 @@ export function Login() {
         {/* Logo */}
         <div className="text-center mb-8">
           <img
-            src="/src/assets/img/logo.png"
+            src="/img/logo.png"
             alt="Logo"
             className="w-20 h-20 mx-auto rounded-full border-4 border-[#5b0e5c] shadow-lg"
           />

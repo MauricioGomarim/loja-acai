@@ -14,13 +14,13 @@ export function Header() {
   return (
     <header className="bg-white shadow">
       <div
-        className={`bg-[url('/src/assets/img/background.webp')] bg-cover bg-top h-[150px]`}
+        className={`bg-[url('/img/background.webp')] bg-cover bg-top h-[150px]`}
       ></div>
       <div className="bg-white h-[50px] mt-[-50px] rounded-tl-[35px] rounded-tr-[35px]"></div>
       <div className="mt-[-100px] flex flex-col items-center justify-center">
         <div className=" logo ">
           <img
-            src="/src/assets/img/logo.png"
+            src="/img/logo.png"
             alt="Logo"
             className="w-28 h-28 mx-auto mt-[0px] border-4 rounded-full shadow-lg"
           />

@@ -255,7 +255,7 @@ export function AdminProducts() {
                   value={form.image}
                   onChange={(e) => setForm((prev) => ({ ...prev, image: e.target.value }))}
                   className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-[#5b0e5c]"
-                  placeholder="/src/assets/img/copo2.webp"
+                  placeholder="/img/copo2.webp"
                 />
               </div>
 
