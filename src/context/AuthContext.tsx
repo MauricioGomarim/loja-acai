@@ -10,7 +10,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   register: (name: string, email: string, phone: string, password: string) => Promise<boolean>;
   logout: () => void;
-  addOrder: (orderData: CreateOrderData) => Promise<void>;
+  addOrder: (orderData: CreateOrderData) => Promise<Order>;
   refreshOrders: () => Promise<void>;
 }
 
@@ -90,10 +90,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setOrders([]);
   }
 
-  async function addOrder(orderData: CreateOrderData) {
+  async function addOrder(orderData: CreateOrderData): Promise<Order> {
     try {
       const newOrder = await api.createOrder(orderData);
       setOrders((prev) => [newOrder, ...prev]);
+      return newOrder;
     } catch (err) {
       console.error("Error creating order:", err);
       throw err;

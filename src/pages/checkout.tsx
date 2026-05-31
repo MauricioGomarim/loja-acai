@@ -35,6 +35,8 @@ export function Checkout() {
   );
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [placing, setPlacing] = useState(false);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
+  const [showPixQr, setShowPixQr] = useState(false);
 
   // PIX state
   const [pixData, setPixData] = useState<PixPayment | null>(null);
@@ -92,13 +94,14 @@ export function Checkout() {
     return () => clearInterval(interval);
   }, [pixData?.paymentId, pixPaid]);
 
-  const handleGeneratePix = useCallback(async () => {
+  const handleGeneratePix = useCallback(async (orderId?: string) => {
     setPixLoading(true);
     try {
       const result = await api.createPixPayment({
         amount: totalPrice,
-        description: `Pedido Açaí Delli - ${items.length} item(ns)`,
+        description: `Pedido Açaí Delli #${orderId || Date.now()}`,
         payerEmail: formData.email || undefined,
+        orderId,
       });
       setPixData(result);
     } catch (err) {
@@ -107,7 +110,7 @@ export function Checkout() {
     } finally {
       setPixLoading(false);
     }
-  }, [totalPrice, items.length, formData.email]);
+  }, [totalPrice, formData.email]);
 
   const handleCopyCode = useCallback(() => {
     if (pixData?.qrCode) {
@@ -121,7 +124,7 @@ export function Checkout() {
     setPlacing(true);
     try {
       const paymentMethod = enabledMethods.find((m) => m.id === selectedPayment)?.name || "PIX";
-      await addOrder({
+      const order = await addOrder({
         items: items.map((item) => ({
           title: item.title,
           quantity: item.quantity,
@@ -137,25 +140,32 @@ export function Checkout() {
         deliveryCity: cepDados?.localidade,
         deliveryComplement: complemento || undefined,
       });
-      setOrderPlaced(true);
       clearCart();
+
+      if (selectedPayment === "pix") {
+        setCreatedOrderId(order.id);
+        setShowPixQr(true);
+        await handleGeneratePix(order.id);
+      } else {
+        setOrderPlaced(true);
+      }
     } catch (err) {
       console.error("Error placing order:", err);
       alert("Erro ao finalizar pedido. Tente novamente.");
     } finally {
       setPlacing(false);
     }
-  }, [selectedPayment, enabledMethods, items, totalPrice, cepDados, cep, numero, complemento, addOrder, clearCart]);
+  }, [selectedPayment, enabledMethods, items, totalPrice, cepDados, cep, numero, complemento, addOrder, clearCart, handleGeneratePix]);
 
-  // Auto-generate PIX when selected
+  // When PIX payment is confirmed, show success
   useEffect(() => {
-    if (selectedPayment === "pix" && step === 3 && !pixData && !pixLoading) {
-      handleGeneratePix();
+    if (pixPaid && showPixQr) {
+      setOrderPlaced(true);
     }
-  }, [selectedPayment, step, pixData, pixLoading, handleGeneratePix]);
+  }, [pixPaid, showPixQr]);
 
   // ---- EMPTY CART ----
-  if (items.length === 0 && !orderPlaced) {
+  if (items.length === 0 && !orderPlaced && !showPixQr) {
     return (
       <div className="min-h-screen bg-[#fafafa] flex items-center justify-center px-4">
         <div className="text-center">
@@ -370,40 +380,12 @@ export function Checkout() {
             <div className="bg-white rounded-2xl shadow-sm border border-zinc-100 p-5 mb-4">
               <h2 className="text-lg font-bold text-zinc-900 mb-5 flex items-center gap-2">
                 <span className="w-7 h-7 bg-[#5b0e5c] text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
-                Pagamento
+                {showPixQr ? "Pagamento PIX" : "Pagamento"}
               </h2>
 
-              {/* Payment method selector */}
-              <div className="space-y-2 mb-5">
-                {enabledMethods.map((method) => (
-                  <label
-                    key={method.id}
-                    className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                      selectedPayment === method.id
-                        ? "border-[#5b0e5c] bg-purple-50"
-                        : "border-zinc-100 hover:border-zinc-200"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="payment"
-                      value={method.id}
-                      checked={selectedPayment === method.id}
-                      onChange={() => {
-                        setSelectedPayment(method.id);
-                        setPixData(null);
-                        setPixPaid(false);
-                      }}
-                      className="w-4 h-4 accent-[#5b0e5c]"
-                    />
-                    <span className="font-medium text-sm text-zinc-800">{method.name}</span>
-                  </label>
-                ))}
-              </div>
-
-              {/* PIX QR Code */}
-              {selectedPayment === "pix" && (
-                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-5 mb-5">
+              {/* After order created: show only QR Code for PIX */}
+              {showPixQr ? (
+                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-5">
                   {pixLoading && (
                     <div className="text-center py-8">
                       <div className="w-10 h-10 border-3 border-[#5b0e5c] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
@@ -413,6 +395,9 @@ export function Checkout() {
 
                   {pixData && !pixPaid && (
                     <div className="text-center">
+                      <p className="text-sm text-zinc-600 mb-4">
+                        Pedido <span className="font-bold">#{createdOrderId}</span> criado! Realize o pagamento abaixo.
+                      </p>
                       {pixData.qrCodeBase64 && (
                         <div className="bg-white p-4 rounded-xl inline-block mb-4 shadow-sm">
                           <img
@@ -461,22 +446,48 @@ export function Checkout() {
                     </div>
                   )}
                 </div>
-              )}
+              ) : (
+                <>
+                  {/* Payment method selector */}
+                  <div className="space-y-2 mb-5">
+                    {enabledMethods.map((method) => (
+                      <label
+                        key={method.id}
+                        className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          selectedPayment === method.id
+                            ? "border-[#5b0e5c] bg-purple-50"
+                            : "border-zinc-100 hover:border-zinc-200"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="payment"
+                          value={method.id}
+                          checked={selectedPayment === method.id}
+                          onChange={() => setSelectedPayment(method.id)}
+                          className="w-4 h-4 accent-[#5b0e5c]"
+                        />
+                        <span className="font-medium text-sm text-zinc-800">{method.name}</span>
+                      </label>
+                    ))}
+                  </div>
 
-              {/* Login hint */}
-              {!user && (
-                <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl mb-4 text-sm text-amber-700">
-                  Faça <a href="/login" className="font-semibold underline">login</a> para acompanhar seus pedidos
-                </div>
-              )}
+                  {/* Login hint */}
+                  {!user && (
+                    <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl mb-4 text-sm text-amber-700">
+                      Faça <a href="/login" className="font-semibold underline">login</a> para acompanhar seus pedidos
+                    </div>
+                  )}
 
-              <button
-                onClick={handleFinishOrder}
-                disabled={placing || (selectedPayment === "pix" && !pixPaid)}
-                className="w-full bg-[#5b0e5c] text-white py-3.5 rounded-full font-semibold text-sm active:scale-[0.98] transition-transform shadow-lg shadow-purple-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {placing ? "Finalizando..." : selectedPayment === "pix" && !pixPaid ? "Aguardando pagamento PIX..." : "Finalizar pedido"}
-              </button>
+                  <button
+                    onClick={handleFinishOrder}
+                    disabled={placing}
+                    className="w-full bg-[#5b0e5c] text-white py-3.5 rounded-full font-semibold text-sm active:scale-[0.98] transition-transform shadow-lg shadow-purple-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {placing ? "Finalizando..." : "Finalizar pedido"}
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
