@@ -140,13 +140,13 @@ export function Checkout() {
         deliveryCity: cepDados?.localidade,
         deliveryComplement: complemento || undefined,
       });
-      clearCart();
-
       if (selectedPayment === "pix") {
-        setCreatedOrderId(order.id);
         setShowPixQr(true);
+        setCreatedOrderId(order.id);
+        clearCart();
         await handleGeneratePix(order.id);
       } else {
+        clearCart();
         setOrderPlaced(true);
       }
     } catch (err) {
