@@ -149,14 +149,10 @@ export function Checkout() {
         // Create order first (appears in admin immediately)
         let orderId: string | undefined;
         try {
-          if (user) {
-            const order = await addOrder(orderData);
-            orderId = order.id;
-          } else {
-            const result = await api.createGuestOrder(orderData);
-            orderId = result.id;
-          }
-          setCreatedOrderId(orderId || null);
+          // Always use guest endpoint for PIX (no auth required)
+          const result = await api.createGuestOrder(orderData);
+          orderId = result.id;
+          setCreatedOrderId(orderId);
         } catch (orderErr) {
           console.error("Error creating order:", orderErr);
         }
