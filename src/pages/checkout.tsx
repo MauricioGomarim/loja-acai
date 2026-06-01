@@ -123,29 +123,61 @@ export function Checkout() {
   const handleFinishOrder = useCallback(async () => {
     setPlacing(true);
     try {
-      const paymentMethod = enabledMethods.find((m) => m.id === selectedPayment)?.name || "PIX";
-      const order = await addOrder({
-        items: items.map((item) => ({
-          title: item.title,
-          quantity: item.quantity,
-          price: item.price,
-          ingredients: item.ingredients,
-          details: item.details,
-        })),
-        total: totalPrice,
-        paymentMethod,
-        deliveryAddress: cepDados ? `${cepDados.logradouro}, ${numero}` : undefined,
-        deliveryCep: cep || undefined,
-        deliveryNeighborhood: cepDados?.bairro,
-        deliveryCity: cepDados?.localidade,
-        deliveryComplement: complemento || undefined,
-      });
       if (selectedPayment === "pix") {
+        // PIX: show QR screen immediately, generate PIX, then create order
         setShowPixQr(true);
-        setCreatedOrderId(order.id);
         clearCart();
-        await handleGeneratePix(order.id);
+        await handleGeneratePix();
+
+        // Try to create order if logged in
+        if (user) {
+          try {
+            const paymentMethod = enabledMethods.find((m) => m.id === selectedPayment)?.name || "PIX";
+            const order = await addOrder({
+              items: items.map((item) => ({
+                title: item.title,
+                quantity: item.quantity,
+                price: item.price,
+                ingredients: item.ingredients,
+                details: item.details,
+              })),
+              total: totalPrice,
+              paymentMethod,
+              deliveryAddress: cepDados ? `${cepDados.logradouro}, ${numero}` : undefined,
+              deliveryCep: cep || undefined,
+              deliveryNeighborhood: cepDados?.bairro,
+              deliveryCity: cepDados?.localidade,
+              deliveryComplement: complemento || undefined,
+            });
+            setCreatedOrderId(order.id);
+          } catch (orderErr) {
+            console.error("Error creating order:", orderErr);
+          }
+        }
       } else {
+        // Other methods: require login
+        if (!user) {
+          alert("Faça login para continuar com essa forma de pagamento.");
+          setPlacing(false);
+          return;
+        }
+        const paymentMethod = enabledMethods.find((m) => m.id === selectedPayment)?.name || "Outro";
+        await addOrder({
+          items: items.map((item) => ({
+            title: item.title,
+            quantity: item.quantity,
+            price: item.price,
+            ingredients: item.ingredients,
+            details: item.details,
+          })),
+          total: totalPrice,
+          paymentMethod,
+          deliveryAddress: cepDados ? `${cepDados.logradouro}, ${numero}` : undefined,
+          deliveryCep: cep || undefined,
+          deliveryNeighborhood: cepDados?.bairro,
+          deliveryCity: cepDados?.localidade,
+          deliveryComplement: complemento || undefined,
+        });
         clearCart();
         setOrderPlaced(true);
       }
@@ -155,7 +187,7 @@ export function Checkout() {
     } finally {
       setPlacing(false);
     }
-  }, [selectedPayment, enabledMethods, items, totalPrice, cepDados, cep, numero, complemento, addOrder, clearCart, handleGeneratePix]);
+  }, [selectedPayment, enabledMethods, items, totalPrice, cepDados, cep, numero, complemento, user, addOrder, clearCart, handleGeneratePix]);
 
   // When PIX payment is confirmed, show success
   useEffect(() => {
