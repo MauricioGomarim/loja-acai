@@ -2,12 +2,14 @@ import { Header } from "../components/header";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
+import { useLocation } from "../hooks/useLocation";
 import type { Product } from "../lib/api";
 
 export function Home() {
   const [timeLeft, setTimeLeft] = useState<number>(40 * 60);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { city } = useLocation();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -33,6 +35,13 @@ export function Home() {
 
   const minutes = String(Math.floor(timeLeft / 60)).padStart(2, "0");
   const seconds = String(timeLeft % 60).padStart(2, "0");
+
+  const categoryIds: Record<string, string> = {
+    "Pague 1, Leve 2": "cat-pague-1-leve-2",
+    "Pague 1, Leve 2 - Zero Açúcar": "cat-pague-1-leve-2-zero",
+    "Açaí": "cat-acai",
+    "Açaí Zero Açúcar": "cat-acai-zero",
+  };
 
   const categories = [
     "Pague 1, Leve 2",
@@ -65,7 +74,7 @@ export function Home() {
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="w-full">
           <span className="text-center border-[#077c22] border-2 rounded-[10px] w-full flex text-[#077c22] justify-center p-2.5 text-[13px] font-medium mb-4">
-            Entrega Grátis para Bastos!
+            Entrega Grátis para {city || "Bebedouro"}!
           </span>
           <span className="text-center border-[#800080] border-2 rounded-[10px] w-full flex text-[#800080] justify-center p-2.5 text-[13px] font-medium">
             Aproveite nossa promoção com preços irresistíveis igual Açaí 💜
@@ -77,7 +86,7 @@ export function Home() {
           if (categoryProducts.length === 0) return null;
 
           return (
-            <div key={category}>
+            <div key={category} id={categoryIds[category]}>
               <h1 className="text-[#5b0e5c] text-[20px] font-[600] mt-6 mb-2">
                 {category}
               </h1>

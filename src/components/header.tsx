@@ -4,11 +4,13 @@ import { IoIosPin } from "react-icons/io";
 import { IoInformationOutline, IoCartOutline, IoPersonOutline } from "react-icons/io5";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { useLocation } from "../hooks/useLocation";
 import { useNavigate } from "react-router-dom";
 
 export function Header() {
   const { totalItems, setIsCartOpen } = useCart();
   const { user } = useAuth();
+  const { city } = useLocation();
   const navigate = useNavigate();
 
   return (
@@ -59,7 +61,7 @@ export function Header() {
           </span>{" "}
         </div>
         <div className="loc text-zinc-700 flex items-center gap-1 text-[13px] mb-2">
-          <IoIosPin /> Bastos - SP • 1,6km de você
+          <IoIosPin /> {city || "Bebedouro - SP"} • 1,6km de você
         </div>
         <div className="avaliacao text-zinc-700 flex items-center gap-1 text-[13px] mb-2">
           <FaStar /> <span className="font-bold">4,8</span> (136 avaliações)
@@ -69,12 +71,12 @@ export function Header() {
           <span className="w-3 h-3 bg-green-800 rounded-full"></span>Aberto
         </div>
       </div>
-      <nav className="bg-[#5b0e5c] py-2">
-        <ul className="flex justify-center gap-3 text-[#fff] text-[16px] font-[600] font-medium ">
-          <li className="p-2">Pague 1, Leve 2</li>
-          <li className="p-2">Pague 1, Leve 2 - Zero Açúcar</li>
-          <li className="p-2">Açaí</li>
-          <li className="p-2">Açaí Zero</li>
+      <nav className="bg-[#5b0e5c] py-2 overflow-x-auto">
+        <ul className="flex justify-center gap-3 text-[#fff] text-[16px] font-[600] font-medium">
+          <li><a href="#cat-pague-1-leve-2" className="p-2 block whitespace-nowrap">Pague 1, Leve 2</a></li>
+          <li><a href="#cat-pague-1-leve-2-zero" className="p-2 block whitespace-nowrap">Pague 1, Leve 2 - Zero Açúcar</a></li>
+          <li><a href="#cat-acai" className="p-2 block whitespace-nowrap">Açaí</a></li>
+          <li><a href="#cat-acai-zero" className="p-2 block whitespace-nowrap">Açaí Zero</a></li>
         </ul>
       </nav>
     </header>
