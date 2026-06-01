@@ -97,17 +97,20 @@ export function Checkout() {
 
   const handleGeneratePix = useCallback(async (orderId?: string) => {
     setPixLoading(true);
+    const pixPayload = {
+      amount: totalPrice,
+      description: `Pedido Açaí Delli #${orderId || Date.now()}`,
+      payerEmail: formData.email || undefined,
+      orderId,
+    };
+    console.log("PIX payload:", pixPayload);
     try {
-      const result = await api.createPixPayment({
-        amount: totalPrice,
-        description: `Pedido Açaí Delli #${orderId || Date.now()}`,
-        payerEmail: formData.email || undefined,
-        orderId,
-      });
+      const result = await api.createPixPayment(pixPayload);
+      console.log("PIX result:", result);
       setPixData(result);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro ao gerar PIX:", err);
-      alert("Erro ao gerar QR Code PIX. Tente novamente.");
+      alert("Erro ao gerar QR Code PIX: " + (err.message || "Tente novamente."));
     } finally {
       setPixLoading(false);
     }
@@ -189,18 +192,27 @@ export function Checkout() {
       pixOrderDataRef.current = null;
 
       const createOrder = async () => {
-        try {
-          if (user) {
-            const order = await addOrder(orderData);
-            setCreatedOrderId(order.id);
-          } else {
-            const result = await api.createGuestOrder(orderData);
-            setCreatedOrderId(result.id);
+        const maxRetries = 3;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            if (user) {
+              const order = await addOrder(orderData);
+              setCreatedOrderId(order.id);
+            } else {
+              const result = await api.createGuestOrder(orderData);
+              setCreatedOrderId(result.id);
+            }
+            setOrderPlaced(true);
+            return; // success
+          } catch (err) {
+            console.error(`Error creating order after PIX (attempt ${attempt}/${maxRetries}):`, err);
+            if (attempt < maxRetries) {
+              await new Promise((r) => setTimeout(r, 1500));
+            }
           }
-        } catch (err) {
-          console.error("Error creating order after PIX:", err);
         }
-        setOrderPlaced(true);
+        // All retries failed - show error instead of success
+        alert("Pagamento confirmado, mas houve erro ao registrar o pedido. Entre em contato com o estabelecimento.");
       };
 
       createOrder();
