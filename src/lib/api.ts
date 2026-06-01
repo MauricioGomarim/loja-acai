@@ -135,6 +135,13 @@ class ApiClient {
     });
   }
 
+  async createGuestOrder(data: CreateOrderData & { payerEmail?: string }) {
+    return this.request<{ id: string }>('/orders/guest', {
+      method: 'POST',
+      body: data
+    });
+  }
+
   async getMyOrders() {
     return this.request<Order[]>('/orders/my');
   }

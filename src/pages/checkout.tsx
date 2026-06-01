@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
 import { api } from "../lib/api";
-import type { PixPayment } from "../lib/api";
+import type { PixPayment, CreateOrderData } from "../lib/api";
 import { IMaskInput } from "react-imask";
 
 interface ViaCepResponse {
@@ -43,6 +43,7 @@ export function Checkout() {
   const [pixLoading, setPixLoading] = useState(false);
   const [pixPaid, setPixPaid] = useState(false);
   const [copied, setCopied] = useState(false);
+  const pixOrderDataRef = useRef<(CreateOrderData & { payerEmail?: string }) | null>(null);
 
   // Address
   const [cep, setCep] = useState("");
@@ -124,36 +125,28 @@ export function Checkout() {
     setPlacing(true);
     try {
       if (selectedPayment === "pix") {
-        // PIX: show QR screen immediately, generate PIX, then create order
+        // PIX: save order data, show QR, generate PIX
+        const orderData: CreateOrderData & { payerEmail?: string } = {
+          items: items.map((item) => ({
+            title: item.title,
+            quantity: item.quantity,
+            price: item.price,
+            ingredients: item.ingredients,
+            details: item.details,
+          })),
+          total: totalPrice,
+          paymentMethod: "PIX",
+          payerEmail: formData.email || undefined,
+          deliveryAddress: cepDados ? `${cepDados.logradouro}, ${numero}` : undefined,
+          deliveryCep: cep || undefined,
+          deliveryNeighborhood: cepDados?.bairro,
+          deliveryCity: cepDados?.localidade,
+          deliveryComplement: complemento || undefined,
+        };
+        pixOrderDataRef.current = orderData;
         setShowPixQr(true);
         clearCart();
         await handleGeneratePix();
-
-        // Try to create order if logged in
-        if (user) {
-          try {
-            const paymentMethod = enabledMethods.find((m) => m.id === selectedPayment)?.name || "PIX";
-            const order = await addOrder({
-              items: items.map((item) => ({
-                title: item.title,
-                quantity: item.quantity,
-                price: item.price,
-                ingredients: item.ingredients,
-                details: item.details,
-              })),
-              total: totalPrice,
-              paymentMethod,
-              deliveryAddress: cepDados ? `${cepDados.logradouro}, ${numero}` : undefined,
-              deliveryCep: cep || undefined,
-              deliveryNeighborhood: cepDados?.bairro,
-              deliveryCity: cepDados?.localidade,
-              deliveryComplement: complemento || undefined,
-            });
-            setCreatedOrderId(order.id);
-          } catch (orderErr) {
-            console.error("Error creating order:", orderErr);
-          }
-        }
       } else {
         // Other methods: require login
         if (!user) {
@@ -187,14 +180,28 @@ export function Checkout() {
     } finally {
       setPlacing(false);
     }
-  }, [selectedPayment, enabledMethods, items, totalPrice, cepDados, cep, numero, complemento, user, addOrder, clearCart, handleGeneratePix]);
+  }, [selectedPayment, enabledMethods, items, totalPrice, cepDados, cep, numero, complemento, user, formData.email, addOrder, clearCart, handleGeneratePix]);
 
-  // When PIX payment is confirmed, show success
+  // When PIX payment is confirmed, create order and show success
   useEffect(() => {
-    if (pixPaid && showPixQr) {
+    if (pixPaid && showPixQr && pixOrderDataRef.current) {
+      const orderData = pixOrderDataRef.current;
+      pixOrderDataRef.current = null;
+
+      // Create order in background
+      if (user) {
+        addOrder(orderData).then((order) => {
+          setCreatedOrderId(order.id);
+        }).catch((err) => console.error("Error creating order after PIX:", err));
+      } else {
+        api.createGuestOrder(orderData).then((result) => {
+          setCreatedOrderId(result.id);
+        }).catch((err) => console.error("Error creating guest order after PIX:", err));
+      }
+
       setOrderPlaced(true);
     }
-  }, [pixPaid, showPixQr]);
+  }, [pixPaid, showPixQr, user, addOrder]);
 
   // ---- EMPTY CART ----
   if (items.length === 0 && !orderPlaced && !showPixQr) {
