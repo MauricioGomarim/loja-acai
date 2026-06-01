@@ -198,7 +198,7 @@ class ApiClient {
     });
   }
 
-  async createPixPayment(data: { amount: number; description: string; payerEmail?: string; orderId?: string }) {
+  async createPixPayment(data: { amount: number; description: string; payerEmail?: string; orderId?: string; customerName?: string; customerPhone?: string; customerCpf?: string }) {
     return this.request<{ paymentId: string; status: string; qrCodeBase64: string | null; qrCode: string | null; ticketUrl: string | null }>('/payments/pix', {
       method: 'POST',
       body: data

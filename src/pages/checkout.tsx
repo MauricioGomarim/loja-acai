@@ -56,6 +56,7 @@ export function Checkout() {
     email: user?.email || "",
     phone: user?.phone || "",
     name: user?.name || "",
+    cpf: "",
   });
 
   // CEP lookup
@@ -101,6 +102,9 @@ export function Checkout() {
       description: `Pedido Açaí Delli #${orderId || Date.now()}`,
       payerEmail: formData.email || undefined,
       orderId,
+      customerName: formData.name || undefined,
+      customerPhone: formData.phone || undefined,
+      customerCpf: formData.cpf ? formData.cpf.replace(/\D/g, '') : undefined,
     };
     console.log("PIX payload:", pixPayload);
     try {
@@ -113,7 +117,7 @@ export function Checkout() {
     } finally {
       setPixLoading(false);
     }
-  }, [totalPrice, formData.email]);
+  }, [totalPrice, formData.email, formData.name, formData.phone]);
 
   const handleCopyCode = useCallback(() => {
     if (pixData?.qrCode) {
@@ -322,6 +326,24 @@ export function Checkout() {
                     placeholder="Seu nome"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full h-12 px-4 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#5b0e5c]/30 focus:border-[#5b0e5c] transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-700 mb-1.5">CPF</label>
+                  <input
+                    type="text"
+                    placeholder="000.000.000-00"
+                    maxLength={14}
+                    value={formData.cpf}
+                    onChange={(e) => {
+                      let v = e.target.value.replace(/\D/g, '');
+                      if (v.length > 11) v = v.slice(0, 11);
+                      if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+                      else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                      else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+                      setFormData({ ...formData, cpf: v });
+                    }}
                     className="w-full h-12 px-4 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#5b0e5c]/30 focus:border-[#5b0e5c] transition-all"
                   />
                 </div>
