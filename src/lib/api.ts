@@ -199,19 +199,19 @@ class ApiClient {
   }
 
   async createPixPayment(data: { amount: number; description: string; payerEmail?: string; orderId?: string }) {
-    return this.request<{ paymentId: number; status: string; qrCodeBase64: string | null; qrCode: string | null; ticketUrl: string | null }>('/payments/pix', {
+    return this.request<{ paymentId: string; status: string; qrCodeBase64: string | null; qrCode: string | null; ticketUrl: string | null }>('/payments/pix', {
       method: 'POST',
       body: data
     });
   }
 
-  async checkPixPaymentStatus(paymentId: number) {
-    return this.request<{ paymentId: number; status: string; statusDetail: string }>(`/payments/pix/${paymentId}/status`);
+  async checkPixPaymentStatus(paymentId: string) {
+    return this.request<{ paymentId: string; status: string; statusDetail: string }>(`/payments/pix/${paymentId}/status`);
   }
 }
 
 export interface PixPayment {
-  paymentId: number;
+  paymentId: string;
   status: string;
   qrCodeBase64: string | null;
   qrCode: string | null;

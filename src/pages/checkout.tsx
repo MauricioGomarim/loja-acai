@@ -440,7 +440,7 @@ export function Checkout() {
                       {pixData.qrCodeBase64 && (
                         <div className="bg-white p-4 rounded-xl inline-block mb-4 shadow-sm">
                           <img
-                            src={`data:image/png;base64,${pixData.qrCodeBase64}`}
+                            src={pixData.qrCodeBase64.startsWith('data:') ? pixData.qrCodeBase64 : `data:image/png;base64,${pixData.qrCodeBase64}`}
                             alt="QR Code PIX"
                             className="w-48 h-48 sm:w-56 sm:h-56"
                           />
