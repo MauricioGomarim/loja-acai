@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
@@ -43,7 +43,6 @@ export function Checkout() {
   const [pixLoading, setPixLoading] = useState(false);
   const [pixPaid, setPixPaid] = useState(false);
   const [copied, setCopied] = useState(false);
-  const pixOrderDataRef = useRef<(CreateOrderData & { payerEmail?: string }) | null>(null);
 
   // Address
   const [cep, setCep] = useState("");
@@ -128,7 +127,7 @@ export function Checkout() {
     setPlacing(true);
     try {
       if (selectedPayment === "pix") {
-        // PIX: save order data, show QR, generate PIX
+        // PIX: create order first, then generate QR
         const orderData: CreateOrderData & { payerEmail?: string } = {
           items: items.map((item) => ({
             title: item.title,
@@ -146,10 +145,26 @@ export function Checkout() {
           deliveryCity: cepDados?.localidade,
           deliveryComplement: complemento || undefined,
         };
-        pixOrderDataRef.current = orderData;
+
+        // Create order first (appears in admin immediately)
+        let orderId: string | undefined;
+        try {
+          if (user) {
+            const order = await addOrder(orderData);
+            orderId = order.id;
+          } else {
+            const result = await api.createGuestOrder(orderData);
+            orderId = result.id;
+          }
+          setCreatedOrderId(orderId || null);
+        } catch (orderErr) {
+          console.error("Error creating order:", orderErr);
+        }
+
+        // Then show QR and generate PIX
         setShowPixQr(true);
         clearCart();
-        await handleGeneratePix();
+        await handleGeneratePix(orderId);
       } else {
         // Other methods: require login
         if (!user) {
@@ -185,39 +200,12 @@ export function Checkout() {
     }
   }, [selectedPayment, enabledMethods, items, totalPrice, cepDados, cep, numero, complemento, user, formData.email, addOrder, clearCart, handleGeneratePix]);
 
-  // When PIX payment is confirmed, create order and show success
+  // When PIX payment is confirmed, just show success (order already exists)
   useEffect(() => {
-    if (pixPaid && showPixQr && pixOrderDataRef.current) {
-      const orderData = pixOrderDataRef.current;
-      pixOrderDataRef.current = null;
-
-      const createOrder = async () => {
-        const maxRetries = 3;
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-          try {
-            if (user) {
-              const order = await addOrder(orderData);
-              setCreatedOrderId(order.id);
-            } else {
-              const result = await api.createGuestOrder(orderData);
-              setCreatedOrderId(result.id);
-            }
-            setOrderPlaced(true);
-            return; // success
-          } catch (err) {
-            console.error(`Error creating order after PIX (attempt ${attempt}/${maxRetries}):`, err);
-            if (attempt < maxRetries) {
-              await new Promise((r) => setTimeout(r, 1500));
-            }
-          }
-        }
-        // All retries failed - show error instead of success
-        alert("Pagamento confirmado, mas houve erro ao registrar o pedido. Entre em contato com o estabelecimento.");
-      };
-
-      createOrder();
+    if (pixPaid && showPixQr) {
+      setOrderPlaced(true);
     }
-  }, [pixPaid, showPixQr, user, addOrder]);
+  }, [pixPaid, showPixQr]);
 
   // ---- EMPTY CART ----
   if (items.length === 0 && !orderPlaced && !showPixQr) {
