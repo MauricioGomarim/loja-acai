@@ -188,18 +188,22 @@ export function Checkout() {
       const orderData = pixOrderDataRef.current;
       pixOrderDataRef.current = null;
 
-      // Create order in background
-      if (user) {
-        addOrder(orderData).then((order) => {
-          setCreatedOrderId(order.id);
-        }).catch((err) => console.error("Error creating order after PIX:", err));
-      } else {
-        api.createGuestOrder(orderData).then((result) => {
-          setCreatedOrderId(result.id);
-        }).catch((err) => console.error("Error creating guest order after PIX:", err));
-      }
+      const createOrder = async () => {
+        try {
+          if (user) {
+            const order = await addOrder(orderData);
+            setCreatedOrderId(order.id);
+          } else {
+            const result = await api.createGuestOrder(orderData);
+            setCreatedOrderId(result.id);
+          }
+        } catch (err) {
+          console.error("Error creating order after PIX:", err);
+        }
+        setOrderPlaced(true);
+      };
 
-      setOrderPlaced(true);
+      createOrder();
     }
   }, [pixPaid, showPixQr, user, addOrder]);
 

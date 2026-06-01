@@ -28,10 +28,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       api.getMe()
         .then(userData => {
           setUser(userData);
-          return api.getMyOrders();
-        })
-        .then(userOrders => {
-          setOrders(userOrders);
+          // Fetch orders separately - don't logout if this fails
+          api.getMyOrders().then(setOrders).catch(() => {});
         })
         .catch(() => {
           localStorage.removeItem("acai_token");
@@ -58,8 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { user: userData, token } = await api.login(email, password);
       localStorage.setItem("acai_token", token);
       setUser(userData);
-      const userOrders = await api.getMyOrders();
-      setOrders(userOrders);
+      // Fetch orders separately - don't fail login if this errors
+      api.getMyOrders().then(setOrders).catch(() => {});
       return true;
     } catch (err) {
       console.error("Login error:", err);

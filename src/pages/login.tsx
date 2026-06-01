@@ -22,18 +22,22 @@ export function Login() {
     setError("");
 
     if (isLogin) {
-      const success = await login(form.email, form.password);
+      if (!form.email.trim() || !form.password) {
+        setError("Preencha email e senha");
+        return;
+      }
+      const success = await login(form.email.trim(), form.password);
       if (success) {
         navigate("/");
       } else {
         setError("Email ou senha incorretos");
       }
     } else {
-      if (!form.name || !form.email || !form.phone || !form.password) {
+      if (!form.name.trim() || !form.email.trim() || !form.phone.trim() || !form.password) {
         setError("Preencha todos os campos");
         return;
       }
-      const success = await register(form.name, form.email, form.phone, form.password);
+      const success = await register(form.name.trim(), form.email.trim(), form.phone.trim(), form.password);
       if (success) {
         navigate("/");
       } else {
