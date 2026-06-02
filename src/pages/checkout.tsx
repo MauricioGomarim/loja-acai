@@ -111,13 +111,14 @@ export function Checkout() {
       const result = await api.createPixPayment(pixPayload);
       console.log("PIX result:", result);
       setPixData(result);
+      return true;
     } catch (err: any) {
       console.error("Erro ao gerar PIX:", err);
-      alert("Erro ao gerar QR Code PIX: " + (err.message || "Tente novamente."));
+      throw err;
     } finally {
       setPixLoading(false);
     }
-  }, [totalPrice, formData.email, formData.name, formData.phone]);
+  }, [totalPrice, formData.email, formData.name, formData.phone, formData.cpf]);
 
   const handleCopyCode = useCallback(() => {
     if (pixData?.qrCode) {
@@ -128,6 +129,15 @@ export function Checkout() {
   }, [pixData?.qrCode]);
 
   const handleFinishOrder = useCallback(async () => {
+    // Validate CPF for PIX
+    if (selectedPayment === "pix") {
+      const cpfClean = formData.cpf.replace(/\D/g, '');
+      if (cpfClean.length !== 11) {
+        alert("Informe um CPF válido para pagar com PIX.");
+        return;
+      }
+    }
+
     setPlacing(true);
     try {
       if (selectedPayment === "pix") {
@@ -153,7 +163,6 @@ export function Checkout() {
         // Create order first (appears in admin immediately)
         let orderId: string | undefined;
         try {
-          // Always use guest endpoint for PIX (no auth required)
           const result = await api.createGuestOrder(orderData);
           orderId = result.id;
           setCreatedOrderId(orderId);
@@ -161,10 +170,18 @@ export function Checkout() {
           console.error("Error creating order:", orderErr);
         }
 
-        // Then show QR and generate PIX
-        setShowPixQr(true);
-        clearCart();
-        await handleGeneratePix(orderId);
+        // Generate PIX first, only show QR on success
+        try {
+          const pixOk = await handleGeneratePix(orderId);
+          if (pixOk) {
+            setShowPixQr(true);
+            clearCart();
+          }
+        } catch (pixErr: any) {
+          alert("Erro ao gerar PIX: " + (pixErr.message || "Tente novamente."));
+          setPlacing(false);
+          return;
+        }
       } else {
         // Other methods: require login
         if (!user) {

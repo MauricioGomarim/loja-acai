@@ -38,7 +38,7 @@ class ApiClient {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
-      throw new Error(error.error || `HTTP error! status: ${response.status}`);
+      throw new Error(error.details || error.error || `HTTP error! status: ${response.status}`);
     }
 
     return response.json();
