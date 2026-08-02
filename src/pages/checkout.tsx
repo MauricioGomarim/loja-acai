@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useSettings } from "../context/SettingsContext";
+import { useStore } from "../context/StoreContext";
 import { api } from "../lib/api";
 import type { PixPayment, CreateOrderData } from "../lib/api";
 import { IMaskInput } from "react-imask";
@@ -24,9 +25,13 @@ const STEPS = [
 
 export function Checkout() {
   const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
   const { items, totalPrice, clearCart } = useCart();
   const { user, addOrder } = useAuth();
   const { getEnabledMethods } = useSettings();
+  const { currentStore } = useStore();
+  const storeId = currentStore?.id || undefined;
+  const storeSlug = slug || currentStore?.slug || "";
   const enabledMethods = getEnabledMethods();
 
   const [step, setStep] = useState(1);
@@ -142,7 +147,7 @@ export function Checkout() {
     try {
       if (selectedPayment === "pix") {
         // PIX: create order first, then generate QR
-        const orderData: CreateOrderData & { payerEmail?: string } = {
+        const orderData: CreateOrderData & { payerEmail?: string; store_id?: string } = {
           items: items.map((item) => ({
             title: item.title,
             quantity: item.quantity,
@@ -153,6 +158,7 @@ export function Checkout() {
           total: totalPrice,
           paymentMethod: "PIX",
           payerEmail: formData.email || undefined,
+          store_id: storeId,
           deliveryAddress: cepDados ? `${cepDados.logradouro}, ${numero}` : undefined,
           deliveryCep: cep || undefined,
           deliveryNeighborhood: cepDados?.bairro,
@@ -200,6 +206,7 @@ export function Checkout() {
           })),
           total: totalPrice,
           paymentMethod,
+          store_id: storeId,
           deliveryAddress: cepDados ? `${cepDados.logradouro}, ${numero}` : undefined,
           deliveryCep: cep || undefined,
           deliveryNeighborhood: cepDados?.bairro,
@@ -236,8 +243,8 @@ export function Checkout() {
           </div>
           <h2 className="text-xl font-bold text-zinc-900 mb-2">Carrinho vazio</h2>
           <p className="text-zinc-500 mb-6">Adicione itens ao carrinho para continuar</p>
-          <button onClick={() => navigate("/")} className="bg-[#5b0e5c] text-white px-8 py-3 rounded-full font-semibold active:scale-95 transition-transform">
-            Ver cardápio
+          <button onClick={() => navigate(`/loja/${storeSlug}`)} className="bg-[#5b0e5c] text-white px-8 py-3 rounded-full font-semibold active:scale-95 transition-transform">
+            Ver cardapio
           </button>
         </div>
       </div>

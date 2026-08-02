@@ -1,28 +1,35 @@
 import { Header } from "../components/header";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
-import { useLocation } from "../hooks/useLocation";
+import { useStore } from "../context/StoreContext";
 import type { Product } from "../lib/api";
 
 export function Home() {
+  const { slug } = useParams<{ slug: string }>();
+  const { currentStore, loadStoreBySlug, storeLoading } = useStore();
   const [timeLeft, setTimeLeft] = useState<number>(40 * 60);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { city } = useLocation();
+
+  useEffect(() => {
+    if (slug) {
+      loadStoreBySlug(slug);
+    }
+  }, [slug, loadStoreBySlug]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
-
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
+    if (!currentStore) return;
     async function fetchProducts() {
       try {
-        const data = await api.getProducts();
+        const data = await api.getProducts(currentStore!.id);
         setProducts(data);
       } catch (err) {
         console.error("Error fetching products:", err);
@@ -31,38 +38,37 @@ export function Home() {
       }
     }
     fetchProducts();
-  }, []);
+  }, [currentStore]);
 
   const minutes = String(Math.floor(timeLeft / 60)).padStart(2, "0");
   const seconds = String(timeLeft % 60).padStart(2, "0");
 
-  const categoryIds: Record<string, string> = {
-    "Pague 1, Leve 2": "cat-pague-1-leve-2",
-    "Pague 1, Leve 2 - Zero Açúcar": "cat-pague-1-leve-2-zero",
-    "Açaí": "cat-acai",
-    "Açaí Zero Açúcar": "cat-acai-zero",
-  };
-
-  const categories = [
-    "Pague 1, Leve 2",
-    "Pague 1, Leve 2 - Zero Açúcar",
-    "Açaí",
-    "Açaí Zero Açúcar",
-  ];
+  const categories = [...new Set(products.map((p) => p.category))];
 
   function getProductsByCategory(category: string) {
     return products.filter((p) => p.category === category);
   }
 
-  if (loading) {
+  if (storeLoading || loading) {
     return (
       <div className="bg-white min-h-screen">
         <Header />
         <div className="max-w-6xl mx-auto px-4 py-8 flex items-center justify-center">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-[#5b0e5c] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-zinc-500">Carregando cardápio...</p>
+            <p className="text-zinc-500">Carregando cardapio...</p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentStore) {
+    return (
+      <div className="bg-white min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-zinc-500 mb-4">Loja nao encontrada</p>
+          <Link to="/" className="text-[#5b0e5c] underline">Voltar para lojas</Link>
         </div>
       </div>
     );
@@ -71,128 +77,108 @@ export function Home() {
   return (
     <div className="bg-white min-h-screen">
       <Header />
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="w-full">
-          <span className="text-center border-[#077c22] border-2 rounded-[10px] w-full flex text-[#077c22] justify-center p-2.5 text-[13px] font-medium mb-4">
-            Entrega Grátis para {city || "Bebedouro"}!
-          </span>
-          <span className="text-center border-[#800080] border-2 rounded-[10px] w-full flex text-[#800080] justify-center p-2.5 text-[13px] font-medium">
-            Aproveite nossa promoção com preços irresistíveis igual Açaí 💜
-          </span>
-        </div>
 
-        {categories.map((category, index) => {
-          const categoryProducts = getProductsByCategory(category);
-          if (categoryProducts.length === 0) return null;
-
-          return (
-            <div key={category} id={categoryIds[category]}>
-              <h1 className="text-[#5b0e5c] text-[20px] font-[600] mt-6 mb-2">
-                {category}
-              </h1>
-              <div className="mt-2 flex flex-wrap gap-[2%]">
-                {categoryProducts.map((product) => (
-                  <Link
-                    key={product.id}
-                    to={`/product/${product.id}`}
-                    className={`border-2 rounded-[10px] flex p-3 gap-2 items-center w-[100%] sm:w-[48%] md:w-[32%] mb-3 h-fit no-underline ${
-                      product.badge
-                        ? "border-[#5b0e5c] pulsar"
-                        : "border-zinc-300"
-                    }`}
-                  >
-                    <div className="flex-1">
-                      {product.badge && (
-                        <span className="text-[#5b0e5c] bg-[#f1cdf2] mb-2 font-[600] text-[14px] p-1 flex rounded-[10px] uppercase items-center justify-center">
-                          {product.badge} 💜
-                        </span>
-                      )}
-                      <h3 className="text-zinc-900 font-[600] text-[16px]">
-                        {product.title}
-                      </h3>
-                      <p className="text-[14px] text-zinc-600 mt-1">
-                        {product.subtitle}
-                      </p>
-                      {product.extras && (
-                        <p className="p-3 bg-zinc-200 rounded-[10px] block text-zinc-700 text-[14px] mt-2">
-                          {product.extras.split("!")[0]}!
-                        </p>
-                      )}
-                      {product.description && (
-                        <p className="text-[14px] text-zinc-600 mt-1">
-                          {product.description}
-                        </p>
-                      )}
-                      <p className="text-[14px] text-zinc-600 mt-1">de</p>
-                      <span className="text-[14px] text-zinc-600 mt-1 line-through">
-                        R${" "}
-                        {product.oldPrice.toFixed(2).replace(".", ",")}
-                      </span>
-                      <p className="text-[14px] text-zinc-600 mt-1">por</p>
-                      <span
-                        className={`text-[18px] mt-2 font-[600] ${
-                          product.badge
-                            ? "text-white bg-[#077c22] px-1 rounded-[8px]"
-                            : "text-[#077c22]"
-                        }`}
-                      >
-                        R${" "}
-                        {product.newPrice.toFixed(2).replace(".", ",")}
-                      </span>
-                      {product.badge && (
-                        <>
-                          <p className="text-[14px] text-zinc-600 mt-1 italic">
-                            A maioria dos clientes escolhe esse porque é o melhor
-                            custo-benefício!
-                          </p>
-                          <p className="text-[12px] text-zinc-600 mt-1">
-                            🔥 Apenas{" "}
-                            <span className="text-white bg-red-600 rounded-2xl font-[600] px-1">
-                              1 combo(s)
-                            </span>{" "}
-                            com esse preço especial
-                          </p>
-                        </>
-                      )}
-                    </div>
-                    <div className="w-[108px]">
-                      <img
-                        className="w-[108px] h-[108px] object-cover rounded-2xl"
-                        src={product.image}
-                        alt={product.title}
-                      />
-                    </div>
-                  </Link>
-                ))}
-
-                {/* Timer apenas na primeira categoria */}
-                {index === 0 && (
-                  <div className="border-2 border-red-600 bg-red-100 rounded-[10px] flex p-3 gap-2 items-start w-[100%] sm:w-[48%] md:w-[32%] mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-red-600 text-center font-[600] text-[14px]">
-                        A promoção vai acabar em:
-                      </h3>
-                      <div className="flex justify-center items-center mt-2 gap-6">
-                        <div className="flex gap-2 flex-col items-center">
-                          <span className="bg-red-600 p-4 rounded text-[20px] flex justify-center font-bold min-w-[60px]">
-                            {minutes}
-                          </span>
-                          <p className="text-red-600">Minutos</p>
-                        </div>
-                        <div className="flex gap-2 flex-col items-center">
-                          <span className="bg-red-600 p-4 rounded text-[20px] flex justify-center font-bold min-w-[60px]">
-                            {seconds}
-                          </span>
-                          <p className="text-red-600">Segundos</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+      {/* Promo Timer - only show on first category */}
+      {categories.length > 0 && (
+        <div className="max-w-6xl mx-auto px-4 mb-4 mt-2">
+          <div className="rounded-2xl overflow-hidden shadow-sm border border-zinc-100 relative">
+            <div
+              className="h-12 flex items-center justify-between px-4 text-white font-medium relative z-10"
+              style={{ backgroundColor: currentStore.primaryColor }}
+            >
+              <div className="flex items-center gap-2 text-sm">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                </span>
+                {categories[0]}
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-normal opacity-90">Encerra em:</span>
+                <div className="flex gap-1">
+                  <span className="bg-white/20 px-1.5 py-0.5 rounded text-xs font-mono">
+                    {minutes[0]}
+                  </span>
+                  <span className="bg-white/20 px-1.5 py-0.5 rounded text-xs font-mono">
+                    {minutes[1]}
+                  </span>
+                  <span className="text-xs font-mono">:</span>
+                  <span className="bg-white/20 px-1.5 py-0.5 rounded text-xs font-mono">
+                    {seconds[0]}
+                  </span>
+                  <span className="bg-white/20 px-1.5 py-0.5 rounded text-xs font-mono">
+                    {seconds[1]}
+                  </span>
+                </div>
               </div>
             </div>
-          );
-        })}
+          </div>
+        </div>
+      )}
+
+      {/* Delivery Info */}
+      <div className="max-w-6xl mx-auto px-4 mb-4">
+        <p className="text-center text-zinc-500 text-sm">
+          Entrega Gratis • {currentStore.city || "Entrega"}
+        </p>
+      </div>
+
+      {/* Products by Category */}
+      <div className="max-w-6xl mx-auto px-4 pb-8">
+        {categories.map((category) => (
+          <div key={category} className="mb-8">
+            <h2
+              className="text-lg font-bold text-zinc-900 mb-4"
+              id={`cat-${category.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+            >
+              {category}
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {getProductsByCategory(category).map((product) => (
+                <Link
+                  key={product.id}
+                  to={`/loja/${currentStore.slug}/product/${product.id}`}
+                  className="bg-white border border-zinc-200 rounded-2xl overflow-hidden hover:shadow-md transition-shadow no-underline"
+                >
+                  <div className="relative">
+                    {product.badge && (
+                      <div
+                        className="absolute top-2 left-2 text-white text-xs px-2 py-0.5 rounded-full z-10"
+                        style={{ backgroundColor: currentStore.secondaryColor }}
+                      >
+                        {product.badge}
+                      </div>
+                    )}
+                    <img
+                      src={product.image || "/img/copo2.webp"}
+                      alt={product.title}
+                      className="w-full h-32 object-cover"
+                    />
+                  </div>
+                  <div className="p-3">
+                    <h3 className="font-semibold text-zinc-900 text-sm leading-tight">
+                      {product.title}
+                    </h3>
+                    <p className="text-xs text-zinc-500 mt-1">{product.subtitle}</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      {product.oldPrice > product.newPrice && (
+                        <span className="text-xs text-zinc-400 line-through">
+                          R$ {product.oldPrice.toFixed(2)}
+                        </span>
+                      )}
+                      <span
+                        className="text-sm font-bold"
+                        style={{ color: currentStore.primaryColor }}
+                      >
+                        R$ {product.newPrice.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

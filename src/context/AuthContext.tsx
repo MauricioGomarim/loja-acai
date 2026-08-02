@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { ReactNode } from "react";
 import { api } from "../lib/api";
-import type { User, Order, CreateOrderData } from "../lib/api";
+import type { User, Order, CreateOrderData, UserRole } from "../lib/api";
 
 interface AuthContextType {
   user: User | null;
@@ -10,8 +10,11 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   register: (name: string, email: string, phone: string, password: string) => Promise<boolean>;
   logout: () => void;
-  addOrder: (orderData: CreateOrderData) => Promise<Order>;
+  addOrder: (orderData: CreateOrderData & { store_id?: string }) => Promise<Order>;
   refreshOrders: () => Promise<void>;
+  isPlatformOwner: boolean;
+  isStoreOwner: boolean;
+  isStoreAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,14 +24,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Check for existing token on mount
   useEffect(() => {
     const token = localStorage.getItem("acai_token");
     if (token) {
       api.getMe()
         .then(userData => {
           setUser(userData);
-          // Fetch orders separately - don't logout if this fails
           api.getMyOrders().then(setOrders).catch(() => {});
         })
         .catch(() => {
@@ -56,7 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { user: userData, token } = await api.login(email, password);
       localStorage.setItem("acai_token", token);
       setUser(userData);
-      // Fetch orders separately - don't fail login if this errors
       api.getMyOrders().then(setOrders).catch(() => {});
       return true;
     } catch (err) {
@@ -88,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setOrders([]);
   }
 
-  async function addOrder(orderData: CreateOrderData): Promise<Order> {
+  async function addOrder(orderData: CreateOrderData & { store_id?: string }): Promise<Order> {
     try {
       const newOrder = await api.createOrder(orderData);
       setOrders((prev) => [newOrder, ...prev]);
@@ -99,9 +99,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const isPlatformOwner = user?.role === 'platform_owner';
+  const isStoreOwner = user?.role === 'store_owner';
+  const isStoreAdmin = user?.role === 'store_admin';
+
   return (
     <AuthContext.Provider
-      value={{ user, orders, loading, login, register, logout, addOrder, refreshOrders }}
+      value={{ user, orders, loading, login, register, logout, addOrder, refreshOrders, isPlatformOwner, isStoreOwner, isStoreAdmin }}
     >
       {children}
     </AuthContext.Provider>

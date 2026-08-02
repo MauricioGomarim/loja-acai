@@ -37,7 +37,7 @@ export function AdminProducts() {
   const [showCategoryInput, setShowCategoryInput] = useState(false);
 
   useEffect(() => {
-    if (!user?.isAdmin) {
+    if (!user || !["platform_owner", "store_owner", "store_admin"].includes(user.role)) {
       navigate("/");
       return;
     }

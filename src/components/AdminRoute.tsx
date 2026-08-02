@@ -13,7 +13,12 @@ export function AdminRoute({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!user?.isAdmin) {
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const allowedRoles = ["platform_owner", "store_owner", "store_admin"];
+  if (!allowedRoles.includes(user.role) && !user.isAdmin) {
     return <Navigate to="/" replace />;
   }
 

@@ -34,13 +34,12 @@ export function AdminOrders() {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user?.isAdmin) {
+    if (!user || !["platform_owner", "store_owner", "store_admin"].includes(user.role)) {
       navigate("/");
       return;
     }
     fetchOrders();
 
-    // Refetch when page becomes visible (e.g., navigating back)
     const handleVisibility = () => {
       if (document.visibilityState === "visible") fetchOrders();
     };
