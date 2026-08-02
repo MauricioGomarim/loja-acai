@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { ReactNode } from "react";
 import { api } from "../lib/api";
-import type { User, Order, CreateOrderData, UserRole } from "../lib/api";
+import type { User, Order, CreateOrderData } from "../lib/api";
 
 interface AuthContextType {
   user: User | null;

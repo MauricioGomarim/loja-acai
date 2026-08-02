@@ -6,7 +6,7 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useStore } from "../context/StoreContext";
 import { useLocation } from "../hooks/useLocation";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 
@@ -15,7 +15,6 @@ export function Header() {
   const { user } = useAuth();
   const { currentStore } = useStore();
   const { city } = useLocation();
-  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [categories, setCategories] = useState<string[]>([]);
 

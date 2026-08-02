@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
 import type { Store, Withdrawal } from "../lib/api";
-import { IoArrowBack, IoStorefront, IoCash } from "react-icons/io5";
+import { IoArrowBack, IoStorefront } from "react-icons/io5";
 
 export function PlatformAdmin() {
   const navigate = useNavigate();
