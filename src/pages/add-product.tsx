@@ -59,7 +59,7 @@ export function AddProduct() {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <p className="text-zinc-500 text-lg">Produto nao encontrado</p>
-          <button onClick={() => navigate(`/loja/${storeSlug}`)} className="mt-4 font-medium" style={{ color: primaryColor }}>
+          <button onClick={() => navigate(`/${storeSlug}`)} className="mt-4 font-medium" style={{ color: primaryColor }}>
             Voltar ao cardapio
           </button>
         </div>
@@ -89,7 +89,7 @@ export function AddProduct() {
   function handleAddToCart() {
     const selectedIngredients = ingredients.filter((i) => i.quantity > 0).map((i) => ({ name: i.name, quantity: i.quantity }));
     addToCart({ id: product!.id, title: product!.title, subtitle: product!.subtitle, price: product!.newPrice, image: product!.image, ingredients: selectedIngredients, details });
-    navigate(`/loja/${storeSlug}`);
+    navigate(`/${storeSlug}`);
   }
 
   const discount = Math.round(((product.oldPrice - product.newPrice) / product.oldPrice) * 100);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
 import type { Product, ProductDetail, CreateProductData } from "../lib/api";
@@ -13,6 +13,8 @@ import {
 
 export function AdminProducts() {
   const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
+  const adminBase = slug ? `/${slug}/admin` : "/admin";
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -164,7 +166,7 @@ export function AdminProducts() {
     <div className="min-h-screen bg-[#f5f5f5]">
       {/* Header */}
       <div className="bg-[#5b0e5c] p-4 flex items-center gap-3">
-        <button onClick={() => navigate("/admin")} className="text-white p-1">
+        <button onClick={() => navigate(adminBase)} className="text-white p-1">
           <IoArrowBack className="text-2xl" />
         </button>
         <h1 className="text-white font-semibold text-lg">Gerenciar Cardápio</h1>

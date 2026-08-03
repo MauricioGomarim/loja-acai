@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
 import type { OrderStats } from "../lib/api";
-import { IoArrowBack, IoCardOutline, IoStorefront, IoCash } from "react-icons/io5";
+import { IoArrowBack, IoCardOutline, IoStorefront, IoCash, IoSettings } from "react-icons/io5";
 
 export function Admin() {
   const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
   const { user, isPlatformOwner, isStoreOwner } = useAuth();
   const [stats, setStats] = useState<OrderStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
+
+  const adminBase = slug ? `/${slug}/admin` : "/admin";
 
   useEffect(() => {
     if (!user) return;
@@ -93,7 +96,7 @@ export function Admin() {
           {(isStoreOwner || user.role === "store_admin") && user.store_id && (
             <>
               <button
-                onClick={() => navigate("/admin/orders")}
+                onClick={() => navigate(`${adminBase}/orders`)}
                 className="w-full bg-white p-4 rounded-2xl shadow-sm flex items-center gap-3"
               >
                 <IoCardOutline className="text-xl text-[#5b0e5c]" />
@@ -103,7 +106,7 @@ export function Admin() {
                 </div>
               </button>
               <button
-                onClick={() => navigate("/admin/products")}
+                onClick={() => navigate(`${adminBase}/products`)}
                 className="w-full bg-white p-4 rounded-2xl shadow-sm flex items-center gap-3"
               >
                 <IoStorefront className="text-xl text-[#5b0e5c]" />
@@ -113,13 +116,23 @@ export function Admin() {
                 </div>
               </button>
               <button
-                onClick={() => navigate("/admin/withdrawals")}
+                onClick={() => navigate(`${adminBase}/withdrawals`)}
                 className="w-full bg-white p-4 rounded-2xl shadow-sm flex items-center gap-3"
               >
                 <IoCash className="text-xl text-[#5b0e5c]" />
                 <div className="text-left">
                   <p className="font-semibold text-zinc-900">Saques</p>
                   <p className="text-xs text-zinc-500">Solicitar e acompanhar saques</p>
+                </div>
+              </button>
+              <button
+                onClick={() => navigate(`${adminBase}/settings`)}
+                className="w-full bg-white p-4 rounded-2xl shadow-sm flex items-center gap-3"
+              >
+                <IoSettings className="text-xl text-[#5b0e5c]" />
+                <div className="text-left">
+                  <p className="font-semibold text-zinc-900">Configurar Loja</p>
+                  <p className="text-xs text-zinc-500">Cores, dados, PIX e mais</p>
                 </div>
               </button>
             </>

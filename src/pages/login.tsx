@@ -1,11 +1,15 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useStore } from "../context/StoreContext";
 import { IoArrowBack, IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
 
 export function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const storeId = (location.state as any)?.storeId;
   const { login, register } = useAuth();
+  const { currentStore } = useStore();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -37,9 +41,9 @@ export function Login() {
         setError("Preencha todos os campos");
         return;
       }
-      const success = await register(form.name.trim(), form.email.trim(), form.phone.trim(), form.password);
+      const success = await register(form.name.trim(), form.email.trim(), form.phone.trim(), form.password, storeId);
       if (success) {
-        navigate("/");
+        navigate(storeId && currentStore?.slug ? `/${currentStore.slug}` : "/");
       } else {
         setError("Este email já está cadastrado");
       }

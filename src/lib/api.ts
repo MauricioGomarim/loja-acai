@@ -34,11 +34,22 @@ class ApiClient {
       config.body = JSON.stringify(body);
     }
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, config);
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}${endpoint}`, config);
+    } catch (networkError) {
+      // Network error (CORS, server down, timeout) — throw as-is, don't treat as auth error
+      throw networkError;
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Erro desconhecido' }));
-      throw new Error(error.details || error.error || `HTTP error! status: ${response.status}`);
+      const err = new Error(error.details || error.error || `HTTP error! status: ${response.status}`);
+      // Mark auth errors so callers can distinguish them from network/server errors
+      if (response.status === 401 || response.status === 403) {
+        (err as any).isAuthError = true;
+      }
+      throw err;
     }
 
     return response.json();
@@ -52,7 +63,7 @@ class ApiClient {
     });
   }
 
-  async register(data: { name: string; email: string; phone: string; password: string }) {
+  async register(data: { name: string; email: string; phone: string; password: string; store_id?: string }) {
     return this.request<{ user: User; token: string }>('/auth/register', {
       method: 'POST',
       body: data
@@ -84,6 +95,17 @@ class ApiClient {
 
   async getUserOrders() {
     return this.request<Order[]>('/users/orders');
+  }
+
+  async getAllUsers() {
+    return this.request<User[]>('/users/all');
+  }
+
+  async updateUserRole(userId: string, data: { role?: string; store_id?: string | null }) {
+    return this.request<User>(`/users/${userId}/role`, {
+      method: 'PUT',
+      body: data
+    });
   }
 
   // Products

@@ -8,7 +8,7 @@ interface AuthContextType {
   orders: Order[];
   loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, phone: string, password: string) => Promise<boolean>;
+  register: (name: string, email: string, phone: string, password: string, storeId?: string) => Promise<boolean>;
   logout: () => void;
   addOrder: (orderData: CreateOrderData & { store_id?: string }) => Promise<Order>;
   refreshOrders: () => Promise<void>;
@@ -26,21 +26,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const token = localStorage.getItem("acai_token");
-    if (token) {
-      api.getMe()
-        .then(userData => {
-          setUser(userData);
-          api.getMyOrders().then(setOrders).catch(() => {});
-        })
-        .catch(() => {
-          localStorage.removeItem("acai_token");
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
+    if (!token) {
       setLoading(false);
+      return;
     }
+
+    // Decode JWT locally first so user is available immediately
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      setUser({
+        id: payload.id,
+        name: payload.name || '',
+        email: payload.email || '',
+        phone: payload.phone || '',
+        isAdmin: payload.isAdmin || false,
+        role: payload.role || 'customer',
+        store_id: payload.store_id || undefined,
+      });
+    } catch {
+      // Invalid token format
+      localStorage.removeItem("acai_token");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+
+    // Then try to refresh user data from server in the background
+    api.getMe()
+      .then(userData => {
+        setUser(userData);
+        api.getMyOrders().then(setOrders).catch(() => {});
+      })
+      .catch(() => {
+        // Server error — keep the local JWT data, don't remove token
+      });
   }, []);
 
   const refreshOrders = useCallback(async () => {
@@ -69,10 +89,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     name: string,
     email: string,
     phone: string,
-    password: string
+    password: string,
+    storeId?: string
   ): Promise<boolean> {
     try {
-      const { user: userData, token } = await api.register({ name, email, phone, password });
+      const { user: userData, token } = await api.register({ name, email, phone, password, store_id: storeId });
       localStorage.setItem("acai_token", token);
       setUser(userData);
       return true;

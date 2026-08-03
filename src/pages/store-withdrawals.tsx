@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
 import type { Withdrawal, StoreBalance } from "../lib/api";
@@ -7,6 +7,8 @@ import { IoArrowBack } from "react-icons/io5";
 
 export function StoreWithdrawals() {
   const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
+  const adminBase = slug ? `/${slug}/admin` : "/admin";
   const { user } = useAuth();
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [balance, setBalance] = useState<StoreBalance | null>(null);

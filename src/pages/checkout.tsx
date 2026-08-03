@@ -243,7 +243,7 @@ export function Checkout() {
           </div>
           <h2 className="text-xl font-bold text-zinc-900 mb-2">Carrinho vazio</h2>
           <p className="text-zinc-500 mb-6">Adicione itens ao carrinho para continuar</p>
-          <button onClick={() => navigate(`/loja/${storeSlug}`)} className="bg-[#5b0e5c] text-white px-8 py-3 rounded-full font-semibold active:scale-95 transition-transform">
+          <button onClick={() => navigate(`/${storeSlug}`)} className="bg-[#5b0e5c] text-white px-8 py-3 rounded-full font-semibold active:scale-95 transition-transform">
             Ver cardapio
           </button>
         </div>

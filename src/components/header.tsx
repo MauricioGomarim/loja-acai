@@ -76,7 +76,7 @@ export function Header() {
             style={{ borderColor: primaryColor, color: primaryColor }}
           />
           <button
-            onClick={() => navigate(user ? "/profile" : "/login")}
+            onClick={() => navigate(user ? "/profile" : "/login", { state: { storeId: currentStore?.id } })}
             className="border-2 rounded-full w-10 h-10 p-2 hover:text-white transition-colors"
             style={{ borderColor: primaryColor, color: primaryColor }}
             onMouseEnter={(e) => {

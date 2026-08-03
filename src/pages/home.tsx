@@ -137,7 +137,7 @@ export function Home() {
               {getProductsByCategory(category).map((product) => (
                 <Link
                   key={product.id}
-                  to={`/loja/${currentStore.slug}/product/${product.id}`}
+                  to={`/${currentStore.slug}/product/${product.id}`}
                   className="bg-white border border-zinc-200 rounded-2xl overflow-hidden hover:shadow-md transition-shadow no-underline"
                 >
                   <div className="relative">

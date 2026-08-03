@@ -2,15 +2,16 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
-import type { Store, Withdrawal } from "../lib/api";
-import { IoArrowBack, IoStorefront } from "react-icons/io5";
+import type { Store, Withdrawal, User } from "../lib/api";
+import { IoArrowBack, IoStorefront, IoPerson } from "react-icons/io5";
 
 export function PlatformAdmin() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [stores, setStores] = useState<Store[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
-  const [tab, setTab] = useState<"stores" | "withdrawals">("stores");
+  const [users, setUsers] = useState<User[]>([]);
+  const [tab, setTab] = useState<"stores" | "withdrawals" | "owners">("stores");
   const [loading, setLoading] = useState(true);
   const [showCreateStore, setShowCreateStore] = useState(false);
   const [newStore, setNewStore] = useState({ name: "", slug: "", city: "", phone: "" });
@@ -25,9 +26,17 @@ export function PlatformAdmin() {
 
   async function loadData() {
     try {
-      const [s, w] = await Promise.all([api.getStores(), api.getAllWithdrawals()]);
-      setStores(s);
-      setWithdrawals(w);
+      const [storesResult, withdrawalsResult, usersResult] = await Promise.allSettled([
+        api.getStores(),
+        api.getAllWithdrawals(),
+        api.getAllUsers()
+      ]);
+      if (storesResult.status === "fulfilled") setStores(storesResult.value);
+      else console.error("Failed to load stores:", storesResult.reason);
+      if (withdrawalsResult.status === "fulfilled") setWithdrawals(withdrawalsResult.value);
+      else console.error("Failed to load withdrawals:", withdrawalsResult.reason);
+      if (usersResult.status === "fulfilled") setUsers(usersResult.value);
+      else console.error("Failed to load users:", usersResult.reason);
     } catch (err) {
       console.error(err);
     } finally {
@@ -101,6 +110,14 @@ export function PlatformAdmin() {
             }`}
           >
             Saques ({withdrawals.filter((w) => w.status === "pending").length})
+          </button>
+          <button
+            onClick={() => setTab("owners")}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+              tab === "owners" ? "bg-[#5b0e5c] text-white" : "bg-white text-zinc-600"
+            }`}
+          >
+            Donos
           </button>
         </div>
 
@@ -223,6 +240,71 @@ export function PlatformAdmin() {
                 </div>
               ))
             )}
+          </>
+        )}
+
+        {tab === "owners" && (
+          <>
+            <p className="text-sm text-zinc-500 mb-3">Atribua donos as lojas. O usuario precisara fazer login novamente para a role ter efeito.</p>
+            {stores.map((store) => {
+              const owner = users.find((u) => u.store_id === store.id && u.role === "store_owner");
+              return (
+                <div key={store.id} className="bg-white rounded-2xl p-4 mb-3 shadow-sm">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
+                      style={{ backgroundColor: store.primaryColor }}
+                    >
+                      <IoStorefront />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-zinc-900 text-sm">{store.name}</h3>
+                      <p className="text-xs text-zinc-500">/{store.slug}</p>
+                    </div>
+                  </div>
+                  {owner ? (
+                    <div className="flex items-center justify-between bg-green-50 rounded-xl px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <IoPerson className="text-green-600" />
+                        <span className="text-sm text-green-800 font-medium">{owner.name}</span>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Remover ${owner.name} como dono de ${store.name}?`)) return;
+                          await api.updateUserRole(owner.id, { role: "customer", store_id: null });
+                          const u = await api.getAllUsers();
+                          setUsers(u);
+                        }}
+                        className="text-xs text-red-500 font-medium px-2 py-1 rounded-lg hover:bg-red-50"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm"
+                      value=""
+                      onChange={async (e) => {
+                        const userId = e.target.value;
+                        if (!userId) return;
+                        await api.updateUserRole(userId, { role: "store_owner", store_id: store.id });
+                        const u = await api.getAllUsers();
+                        setUsers(u);
+                      }}
+                    >
+                      <option value="">Selecionar dono...</option>
+                      {users
+                        .filter((u) => !u.store_id || (u.role === "store_owner" && u.store_id === store.id))
+                        .map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.name} ({u.email})
+                          </option>
+                        ))}
+                    </select>
+                  )}
+                </div>
+              );
+            })}
           </>
         )}
       </div>

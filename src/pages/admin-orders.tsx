@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../lib/api";
 import type { Order, OrderStatus } from "../lib/api";
@@ -27,6 +27,8 @@ const STATUS_OPTIONS: OrderStatus[] = ["pending", "preparing", "delivering", "de
 
 export function AdminOrders() {
   const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
+  const adminBase = slug ? `/${slug}/admin` : "/admin";
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +98,7 @@ export function AdminOrders() {
       {/* Header */}
       <div className="bg-[#5b0e5c] p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate("/admin")} className="text-white p-1">
+          <button onClick={() => navigate(adminBase)} className="text-white p-1">
             <IoArrowBack className="text-2xl" />
           </button>
           <h1 className="text-white font-semibold text-lg">Gerenciar Pedidos</h1>

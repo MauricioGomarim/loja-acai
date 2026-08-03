@@ -42,7 +42,7 @@ export function StoreSelect() {
             {stores.map((store) => (
               <Link
                 key={store.id}
-                to={`/loja/${store.slug}`}
+                to={`/${store.slug}`}
                 className="block border-2 border-zinc-200 rounded-2xl p-4 hover:border-[#5b0e5c] transition-colors no-underline"
               >
                 <div className="flex items-center gap-4">
