@@ -7,8 +7,6 @@ import { IoArrowBack } from "react-icons/io5";
 
 export function StoreWithdrawals() {
   const navigate = useNavigate();
-  const { slug } = useParams<{ slug: string }>();
-  const adminBase = slug ? `/${slug}/admin` : "/admin";
   const { user } = useAuth();
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [balance, setBalance] = useState<StoreBalance | null>(null);
