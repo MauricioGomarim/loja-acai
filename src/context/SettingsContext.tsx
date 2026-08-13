@@ -26,6 +26,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       // Fallback to defaults if API fails
       setPaymentMethods([
         { id: "pix", name: "PIX", enabled: true, pixKey: "14999999999", pixKeyType: "phone" },
+        { id: "test", name: "Simular Pedido (Teste)", enabled: true },
         { id: "credit", name: "Cartão de Crédito", enabled: false },
         { id: "debit", name: "Cartão de Débito", enabled: false },
         { id: "cash", name: "Dinheiro", enabled: false }

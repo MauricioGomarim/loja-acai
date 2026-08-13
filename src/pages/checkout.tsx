@@ -29,10 +29,17 @@ export function Checkout() {
   const { items, totalPrice, clearCart } = useCart();
   const { user, addOrder } = useAuth();
   const { getEnabledMethods } = useSettings();
-  const { currentStore } = useStore();
+  const { currentStore, loadStoreBySlug, storeLoading } = useStore();
   const storeId = currentStore?.id || undefined;
   const storeSlug = slug || currentStore?.slug || "";
   const enabledMethods = getEnabledMethods();
+
+  // Load store if not already in context
+  useEffect(() => {
+    if (slug && !currentStore && !storeLoading) {
+      loadStoreBySlug(slug);
+    }
+  }, [slug, currentStore, storeLoading, loadStoreBySlug]);
 
   const [step, setStep] = useState(1);
   const [selectedPayment, setSelectedPayment] = useState(
@@ -188,6 +195,30 @@ export function Checkout() {
           setPlacing(false);
           return;
         }
+      } else if (selectedPayment === "test") {
+        // Test: create order directly, no gateway
+        const orderData: CreateOrderData & { payerEmail?: string; store_id?: string } = {
+          items: items.map((item) => ({
+            title: item.title,
+            quantity: item.quantity,
+            price: item.price,
+            ingredients: item.ingredients,
+            details: item.details,
+          })),
+          total: totalPrice,
+          paymentMethod: "Simulado (Teste)",
+          payerEmail: formData.email || "teste@teste.com",
+          store_id: storeId,
+          deliveryAddress: cepDados ? `${cepDados.logradouro}, ${numero}` : undefined,
+          deliveryCep: cep || undefined,
+          deliveryNeighborhood: cepDados?.bairro,
+          deliveryCity: cepDados?.localidade,
+          deliveryComplement: complemento || undefined,
+        };
+        const result = await api.createGuestOrder(orderData);
+        setCreatedOrderId(result.id);
+        clearCart();
+        setOrderPlaced(true);
       } else {
         // Other methods: require login
         if (!user) {
@@ -230,6 +261,32 @@ export function Checkout() {
       setOrderPlaced(true);
     }
   }, [pixPaid, showPixQr]);
+
+  // ---- LOADING STORE ----
+  if (storeLoading) {
+    return (
+      <div className="min-h-screen bg-[#fafafa] flex items-center justify-center px-4">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#5b0e5c] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-zinc-500">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- STORE NOT FOUND ----
+  if (!currentStore && slug) {
+    return (
+      <div className="min-h-screen bg-[#fafafa] flex items-center justify-center px-4">
+        <div className="text-center">
+          <p className="text-zinc-500 mb-4">Loja nao encontrada</p>
+          <button onClick={() => navigate("/")} className="bg-[#5b0e5c] text-white px-8 py-3 rounded-full font-semibold active:scale-95 transition-transform">
+            Voltar para lojas
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ---- EMPTY CART ----
   if (items.length === 0 && !orderPlaced && !showPixQr) {

@@ -1,6 +1,7 @@
 import { useCart } from "../context/CartContext";
+import { useStore } from "../context/StoreContext";
 import { IoClose, IoAdd, IoRemove, IoTrashOutline } from "react-icons/io5";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export function CartSidebar() {
   const {
@@ -14,6 +15,11 @@ export function CartSidebar() {
     totalPrice,
   } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { currentStore } = useStore();
+  // Extract slug from URL path (e.g. "/acaidelli/product/123" -> "acaidelli")
+  const pathSlug = location.pathname.split("/").filter(Boolean)[0] || "";
+  const storeSlug = pathSlug || currentStore?.slug || "";
 
   if (!isCartOpen) return null;
 
@@ -149,7 +155,7 @@ export function CartSidebar() {
             <button
               onClick={() => {
                 setIsCartOpen(false);
-                navigate("/checkout");
+                navigate(`/${storeSlug}/checkout`);
               }}
               className="w-full bg-[#5b0e5c] hover:bg-[#4a0b4b] text-white font-semibold py-3.5 rounded-full transition-colors"
             >
