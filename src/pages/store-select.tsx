@@ -16,10 +16,24 @@ export function StoreSelect() {
 
   if (loading) {
     return (
-      <div className="bg-white min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-[#5b0e5c] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-zinc-500">Carregando lojas...</p>
+      <div className="bg-white min-h-screen">
+        <div className="bg-[#5b0e5c] p-6 text-center">
+          <div className="h-7 bg-white/20 rounded w-32 mx-auto mb-2 animate-pulse" />
+          <div className="h-4 bg-white/15 rounded w-48 mx-auto animate-pulse" />
+        </div>
+        <div className="max-w-2xl mx-auto px-4 py-6 space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="border-2 border-zinc-100 rounded-2xl p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-xl bg-zinc-100 animate-pulse" />
+                <div className="flex-1">
+                  <div className="h-5 bg-zinc-100 rounded w-32 mb-2 animate-pulse" />
+                  <div className="h-3 bg-zinc-100 rounded w-48 mb-1 animate-pulse" />
+                  <div className="h-3 bg-zinc-100 rounded w-24 animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );

@@ -53,10 +53,37 @@ export function Home() {
     return (
       <div className="bg-white min-h-screen">
         <Header />
-        <div className="max-w-6xl mx-auto px-4 py-8 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-[#5b0e5c] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-zinc-500">Carregando cardapio...</p>
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          {/* Timer skeleton */}
+          <div className="h-12 bg-zinc-100 rounded-2xl mb-4 animate-pulse" />
+          {/* Delivery info skeleton */}
+          <div className="h-4 bg-zinc-100 rounded w-3/4 mx-auto mb-6 animate-pulse" />
+          {/* Category + product skeletons */}
+          <div className="mb-6">
+            <div className="h-6 bg-zinc-100 rounded w-40 mb-3 animate-pulse" />
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="min-w-[280px] bg-zinc-50 rounded-2xl p-4 border border-zinc-100">
+                  <div className="h-40 bg-zinc-100 rounded-xl mb-3 animate-pulse" />
+                  <div className="h-5 bg-zinc-100 rounded w-3/4 mb-2 animate-pulse" />
+                  <div className="h-3 bg-zinc-100 rounded w-1/2 mb-3 animate-pulse" />
+                  <div className="h-8 bg-zinc-100 rounded-full w-24 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="mb-6">
+            <div className="h-6 bg-zinc-100 rounded w-48 mb-3 animate-pulse" />
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {[1, 2].map((i) => (
+                <div key={i} className="min-w-[280px] bg-zinc-50 rounded-2xl p-4 border border-zinc-100">
+                  <div className="h-40 bg-zinc-100 rounded-xl mb-3 animate-pulse" />
+                  <div className="h-5 bg-zinc-100 rounded w-3/4 mb-2 animate-pulse" />
+                  <div className="h-3 bg-zinc-100 rounded w-1/2 mb-3 animate-pulse" />
+                  <div className="h-8 bg-zinc-100 rounded-full w-24 animate-pulse" />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

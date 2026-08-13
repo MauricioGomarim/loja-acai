@@ -14,8 +14,11 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([
+    { id: "pix", name: "PIX", enabled: true, pixKey: "", pixKeyType: "phone" },
+    { id: "test", name: "Simular Pedido (Teste)", enabled: true },
+  ]);
+  const [loading, setLoading] = useState(false);
 
   const fetchPaymentMethods = useCallback(async () => {
     try {

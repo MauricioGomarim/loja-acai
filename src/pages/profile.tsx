@@ -8,7 +8,7 @@ import {
 
 export function Profile() {
   const navigate = useNavigate();
-  const { user, orders, logout } = useAuth();
+  const { user, orders, ordersLoading, logout } = useAuth();
 
   if (!user) {
     return (
@@ -138,7 +138,25 @@ export function Profile() {
             Meus pedidos
           </h3>
 
-          {orders.length === 0 ? (
+          {ordersLoading ? (
+            <div className="space-y-3">
+              {[1, 2].map((i) => (
+                <div key={i} className="bg-white rounded-2xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="h-4 bg-zinc-100 rounded w-24 mb-1 animate-pulse" />
+                      <div className="h-3 bg-zinc-100 rounded w-32 animate-pulse" />
+                    </div>
+                    <div className="h-6 bg-zinc-100 rounded-full w-20 animate-pulse" />
+                  </div>
+                  <div className="border-t border-zinc-100 pt-3 space-y-2">
+                    <div className="h-4 bg-zinc-100 rounded w-3/4 animate-pulse" />
+                    <div className="h-4 bg-zinc-100 rounded w-1/2 animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : orders.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
               <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <svg

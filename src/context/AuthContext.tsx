@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   orders: Order[];
   loading: boolean;
+  ordersLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   register: (name: string, email: string, phone: string, password: string, storeId?: string) => Promise<boolean>;
   logout: () => void;
@@ -23,11 +24,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("acai_token");
     if (!token) {
       setLoading(false);
+      setOrdersLoading(false);
       return;
     }
 
@@ -52,15 +55,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setLoading(false);
 
-    // Then try to refresh user data from server in the background
-    api.getMe()
-      .then(userData => {
-        setUser(userData);
-        api.getMyOrders().then(setOrders).catch(() => {});
-      })
-      .catch(() => {
-        // Server error — keep the local JWT data, don't remove token
-      });
+    // Fetch user and orders in parallel
+    Promise.allSettled([
+      api.getMe(),
+      api.getMyOrders()
+    ]).then(([userResult, ordersResult]) => {
+      if (userResult.status === 'fulfilled') {
+        setUser(userResult.value);
+      }
+      if (ordersResult.status === 'fulfilled') {
+        setOrders(ordersResult.value);
+      }
+    }).finally(() => {
+      setOrdersLoading(false);
+    });
   }, []);
 
   const refreshOrders = useCallback(async () => {
@@ -126,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, orders, loading, login, register, logout, addOrder, refreshOrders, isPlatformOwner, isStoreOwner, isStoreAdmin }}
+      value={{ user, orders, loading, ordersLoading, login, register, logout, addOrder, refreshOrders, isPlatformOwner, isStoreOwner, isStoreAdmin }}
     >
       {children}
     </AuthContext.Provider>
