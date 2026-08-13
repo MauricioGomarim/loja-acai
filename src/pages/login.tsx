@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useStore } from "../context/StoreContext";
@@ -8,8 +8,35 @@ export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const storeId = (location.state as any)?.storeId;
-  const { login, register } = useAuth();
+  const { user, loading, login, register } = useAuth();
   const { currentStore } = useStore();
+
+  // Redirect already-logged-in users
+  useEffect(() => {
+    if (loading || !user) return;
+
+    if (user.role === "platform_owner") {
+      navigate("/platform", { replace: true });
+    } else if (user.isAdmin || user.role === "store_owner" || user.role === "store_admin") {
+      // Store admin/owner — need slug from store_id
+      if (currentStore?.slug) {
+        navigate(`/${currentStore.slug}/admin`, { replace: true });
+      } else if (user.store_id) {
+        import("../lib/api").then(({ api }) =>
+          api.getStoreById(user.store_id!).then((store) => {
+            if (store?.slug) navigate(`/${store.slug}/admin`, { replace: true });
+            else navigate("/", { replace: true });
+          }).catch(() => navigate("/", { replace: true }))
+        );
+      } else {
+        navigate("/", { replace: true });
+      }
+    } else if (currentStore?.slug) {
+      navigate(`/${currentStore.slug}`, { replace: true });
+    } else {
+      navigate("/", { replace: true });
+    }
+  }, [user, loading, currentStore, navigate]);
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -31,9 +58,7 @@ export function Login() {
         return;
       }
       const success = await login(form.email.trim(), form.password);
-      if (success) {
-        navigate("/");
-      } else {
+      if (!success) {
         setError("Email ou senha incorretos");
       }
     } else {
@@ -42,9 +67,7 @@ export function Login() {
         return;
       }
       const success = await register(form.name.trim(), form.email.trim(), form.phone.trim(), form.password, storeId);
-      if (success) {
-        navigate(storeId && currentStore?.slug ? `/${currentStore.slug}` : "/");
-      } else {
+      if (!success) {
         setError("Este email já está cadastrado");
       }
     }

@@ -347,6 +347,10 @@ export interface Store {
   commissionRate: number;
   active: boolean;
   createdAt: string;
+  // Mercado Pago
+  mpPublicKey?: string;
+  mpAccessTokenSet?: boolean;
+  paymentProvider?: string;
 }
 
 export interface StoreStats {
