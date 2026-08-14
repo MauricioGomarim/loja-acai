@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import type { OrderStats } from "@/lib/api";
@@ -8,7 +7,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ClipboardList, DollarSign } from "lucide-react";
 
 export function StoreDashboard() {
-  const { slug } = useParams<{ slug: string }>();
   const { user, isPlatformOwner } = useAuth();
   const [stats, setStats] = useState<OrderStats | null>(null);
   const [loading, setLoading] = useState(true);
